@@ -1,0 +1,169 @@
+<html><head><base href="https://websim.examples.com/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iPhone購買行為模式模擬器</title>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: space-around;
+    background-color: #f0f0f0;
+  }
+  .container {
+    display: flex;
+    width: 100%;
+    max-width: 1200px;
+  }
+  .controls {
+    width: 30%;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  .graph {
+    width: 65%;
+    height: 600px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  h2 {
+    color: #333;
+  }
+  label {
+    display: block;
+    margin-top: 15px;
+    color: #555;
+  }
+  input[type="range"] {
+    width: 100%;
+  }
+  .value-display {
+    font-weight: bold;
+    color: #4CAF50;
+  }
+  .axis-controls {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="controls">
+    <h2>模型參數</h2>
+    <label for="slope">慾望增長率 (a):</label>
+    <input type="range" id="slope" min="0.1" max="5" step="0.1" value="1">
+    <span id="slopeValue" class="value-display">1</span>
+    
+    <label for="intercept">基礎慾望 (b):</label>
+    <input type="range" id="intercept" min="-5" max="5" step="0.1" value="0">
+    <span id="interceptValue" class="value-display">0</span>
+    
+    <label for="midpoint">購買門檻 (c):</label>
+    <input type="range" id="midpoint" min="0" max="10" step="0.1" value="5">
+    <span id="midpointValue" class="value-display">5</span>
+
+    <div class="axis-controls">
+      <h2>軸範圍調整</h2>
+      <label for="xAxisMax">月薪最大值 (萬元):</label>
+      <input type="range" id="xAxisMax" min="1" max="10" step="0.5" value="10">
+      <span id="xAxisMaxValue" class="value-display">10</span>
+
+      <label for="yAxisMax">行為強度最大值:</label>
+      <input type="range" id="yAxisMax" min="0.1" max="2" step="0.1" value="1">
+      <span id="yAxisMaxValue" class="value-display">1</span>
+    </div>
+  </div>
+  <div id="graph" class="graph"></div>
+</div>
+
+<script>
+const slope = document.getElementById('slope');
+const intercept = document.getElementById('intercept');
+const midpoint = document.getElementById('midpoint');
+const slopeValue = document.getElementById('slopeValue');
+const interceptValue = document.getElementById('interceptValue');
+const midpointValue = document.getElementById('midpointValue');
+const xAxisMax = document.getElementById('xAxisMax');
+const yAxisMax = document.getElementById('yAxisMax');
+const xAxisMaxValue = document.getElementById('xAxisMaxValue');
+const yAxisMaxValue = document.getElementById('yAxisMaxValue');
+
+function updateGraph() {
+  const a = parseFloat(slope.value);
+  const b = parseFloat(intercept.value);
+  const c = parseFloat(midpoint.value);
+  const xMax = parseFloat(xAxisMax.value);
+  const yMax = parseFloat(yAxisMax.value);
+
+  slopeValue.textContent = a.toFixed(1);
+  interceptValue.textContent = b.toFixed(1);
+  midpointValue.textContent = c.toFixed(1);
+  xAxisMaxValue.textContent = xMax.toFixed(1);
+  yAxisMaxValue.textContent = yMax.toFixed(1);
+
+  const x = Array.from({length: 1000}, (_, i) => i * (xMax / 999));
+  
+  const zLine = x.map(xi => a * xi + b);
+  const yStep = x.map(xi => xi <= c ? 0 : 1);
+  const pSigmoid = x.map(xi => 1 / (1 + Math.exp(-(a * (xi - c) + b))));
+
+  const data = [
+    {
+      x: x,
+      y: zLine,
+      mode: 'lines',
+      name: '購買慾望強度',
+      line: {color: 'green'}
+    },
+    {
+      x: x,
+      y: yStep,
+      mode: 'lines',
+      name: '購買行為',
+      line: {color: 'blue'}
+    },
+    {
+      x: x,
+      y: pSigmoid,
+      mode: 'lines',
+      name: '購買機率',
+      line: {color: 'red'}
+    }
+  ];
+
+  const layout = {
+    title: 'iPhone購買行為模式',
+    xaxis: {
+      title: '月薪 (萬元)',
+      range: [0, xMax],
+      tickformat: '.1f'
+    },
+    yaxis: {
+      title: '行為 (買或不買)',
+      range: [0, yMax],
+      tickformat: '.1f'
+    },
+    legend: {x: 0, y: 1},
+    hovermode: 'closest'
+  };
+
+  Plotly.newPlot('graph', data, layout);
+}
+
+slope.addEventListener('input', updateGraph);
+intercept.addEventListener('input', updateGraph);
+midpoint.addEventListener('input', updateGraph);
+xAxisMax.addEventListener('input', updateGraph);
+yAxisMax.addEventListener('input', updateGraph);
+
+updateGraph();
+</script>
+</body>
+</html>
